@@ -20,7 +20,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 100%; /* 5走表示のために幅を最大に広げる */
             margin: 0 auto;
             background: #fff;
             padding: 20px;
@@ -42,17 +42,17 @@
             margin-bottom: 20px;
         }
         .table-container {
-            overflow-x: auto; /* スマホでの横スクロール対策 */
+            overflow-x: auto; /* スマホや画面の狭いPCでの横スクロール対策 */
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
-            min-width: 950px;
+            font-size: 12px; /* 文字サイズを少し小さくして見やすく */
+            min-width: 1400px; /* 5走分の列を確保するため最低横幅を広げる */
         }
         th, td {
             border: 1px solid #dee2e6;
-            padding: 10px 8px;
+            padding: 8px 6px;
             text-align: center;
         }
         th {
@@ -69,10 +69,14 @@
         tr:hover {
             background-color: #e2e6ea;
         }
-        /* 各過去走の列の背景色 */
-        .bg-run1 { background-color: #fff9db; }
-        .bg-run2 { background-color: #f3f0ff; }
-        .bg-run3 { background-color: #e3fafc; }
+        
+        /* 過去5走の列ごとの背景色（見やすさのための色分け） */
+        .bg-run1 { background-color: #fff9db; } /* 黄 */
+        .bg-run2 { background-color: #f3f0ff; } /* 紫 */
+        .bg-run3 { background-color: #e3fafc; } /* 青 */
+        .bg-run4 { background-color: #ebfbee; } /* 緑 */
+        .bg-run5 { background-color: #fff5f5; } /* 赤 */
+        
         .bold { font-weight: bold; }
         .loading {
             text-align: center;
@@ -85,9 +89,9 @@
 <body>
 
 <div class="container">
-    <h1>🐴 南関東4競馬場 データ分析ダッシュボード</h1>
+    <h1>🐴 南関東4競馬場 データ分析ダッシュボード（過去5走完全版）</h1>
     <div class="info-bar">
-        Pythonによる自動スクレイピングデータ。過去走の「前半速度」「後半速度」「ペース指数」を表示しています。
+        Pythonによる自動スクレイピングデータ。過去5走の「前半速度」「後半速度」「ペース指数」をすべて表示しています。
     </div>
 
     <div id="loading-text" class="loading">データを読み込み中...</div>
@@ -96,26 +100,36 @@
         <table id="keiba-table" style="display: none;">
             <thead>
                 <tr>
-                    <th rowspan="2" style="width: 50px;">馬番</th>
-                    <th rowspan="2" style="width: 180px;">馬名</th>
-                    <th rowspan="2" style="width: 100px;">騎手</th>
+                    <th rowspan="2" style="width: 40px;">馬番</th>
+                    <th rowspan="2" style="width: 140px;">馬名</th>
+                    <th rowspan="2" style="width: 80px;">騎手</th>
                     <th colspan="4" class="bg-run1">前走（1走前）</th>
                     <th colspan="4" class="bg-run2">2走前</th>
                     <th colspan="4" class="bg-run3">3走前</th>
+                    <th colspan="4" class="bg-run4">4走前</th>
+                    <th colspan="4" class="bg-run5">5走前</th>
                 </tr>
                 <tr>
                     <th class="sub-header bg-run1">距離/馬場</th>
                     <th class="sub-header bg-run1">タイム</th>
-                    <th class="sub-header bg-run1">前半/後半 速度</th>
-                    <th class="sub-header bg-run1">ペース指数</th>
+                    <th class="sub-header bg-run1">前半/後半</th>
+                    <th class="sub-header bg-run1">ペース</th>
                     <th class="sub-header bg-run2">距離/馬場</th>
                     <th class="sub-header bg-run2">タイム</th>
-                    <th class="sub-header bg-run2">前半/後半 速度</th>
-                    <th class="sub-header bg-run2">ペース指数</th>
+                    <th class="sub-header bg-run2">前半/後半</th>
+                    <th class="sub-header bg-run2">ペース</th>
                     <th class="sub-header bg-run3">距離/馬場</th>
                     <th class="sub-header bg-run3">タイム</th>
-                    <th class="sub-header bg-run3">前半/後半 速度</th>
-                    <th class="sub-header bg-run3">ペース指数</th>
+                    <th class="sub-header bg-run3">前半/後半</th>
+                    <th class="sub-header bg-run3">ペース</th>
+                    <th class="sub-header bg-run4">距離/馬場</th>
+                    <th class="sub-header bg-run4">タイム</th>
+                    <th class="sub-header bg-run4">前半/後半</th>
+                    <th class="sub-header bg-run4">ペース</th>
+                    <th class="sub-header bg-run5">距離/馬場</th>
+                    <th class="sub-header bg-run5">タイム</th>
+                    <th class="sub-header bg-run5">前半/後半</th>
+                    <th class="sub-header bg-run5">ペース</th>
                 </tr>
             </thead>
             <tbody>
@@ -125,7 +139,6 @@
 </div>
 
 <script>
-    // Pythonが吐き出した 'keiba_data.json' を読み込む
     fetch('keiba_data.json')
         .then(response => {
             if (!response.ok) {
@@ -141,20 +154,19 @@
             data.forEach(horse => {
                 const tr = document.createElement('tr');
 
-                // 基本情報の列
+                // 馬の基本情報
                 let html = `
                     <td class="bold">${horse['馬番'] || '-'}</td>
                     <td class="bold" style="text-align: left; color: #115c32;">${horse['馬名'] || '-'}</td>
                     <td>${horse['騎手'] || '-'}</td>
                 `;
 
-                // 過去3走分をループ処理（画面幅を考慮し、まずは3走分を表示）
-                for (let i = 1; i <= 3; i++) {
+                // ★命令を拡張：ループの上限を「5」に変更
+                for (let i = 1; i <= 5; i++) {
                     const dist = horse[`過去${i}_距離`] ? horse[`過去${i}_距離`] + 'm' : '-';
                     const track = horse[`過去${i}_馬場`] || '-';
                     const time = horse[`過去${i}_タイム`] || '-';
                     
-                    // 小数点第2、3位に丸める（データがない場合はハイフン）
                     const front = horse[`過去${i}_前半速度`] ? horse[`過去${i}_前半速度`].toFixed(2) : '-';
                     const late = horse[`過去${i}_後半速度`] ? horse[`過去${i}_後半速度`].toFixed(2) : '-';
                     const pace = horse[`過去${i}_ペース指数`] ? horse[`過去${i}_ペース指数`].toFixed(3) : '-';
@@ -162,7 +174,7 @@
                     html += `
                         <td class="bg-run${i}">${dist}<br><small>(${track})</small></td>
                         <td class="bg-run${i}">${time}</td>
-                        <td class="bg-run${i}">${front} / ${late}</td>
+                        <td class="bg-run${i}">${front} /<br>${late}</td>
                         <td class="bg-run${i} bold" style="color: #b25000;">${pace}</td>
                     `;
                 }
